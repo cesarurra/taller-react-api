@@ -9,14 +9,18 @@ import BlockedPanel from "./components/BlockedPanel";
 import Loader from "./components/Loader";
 import ErrorMessage from "./components/ErrorMessage";
 import useFetch from "./hooks/useFetch";
+import useLocalStorage from "./hooks/useLocalStorage";
 
 const API_URL = "https://rickandmortyapi.com/api/character";
 
 function App() {
   const { data, loading, error } = useFetch(API_URL);
 
-  const [favoritos, setFavoritos] = useState([]);
-  const [bloqueados, setBloqueados] = useState([]);
+  // useLocalStorage funciona igual que useState, pero ademas guarda el
+  // valor en el navegador bajo la clave indicada, para que no se pierda
+  // al refrescar la pagina.
+  const [favoritos, setFavoritos] = useLocalStorage("favoritos", []);
+  const [bloqueados, setBloqueados] = useLocalStorage("bloqueados", []);
   const [busqueda, setBusqueda] = useState("");
 
   const personajes = data?.results ?? [];
