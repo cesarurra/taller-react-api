@@ -1,22 +1,48 @@
+import { useState } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import StatsBar from "./components/StatsBar";
+import CharacterList from "./components/CharacterList";
+import Loader from "./components/Loader";
+import ErrorMessage from "./components/ErrorMessage";
+import useFetch from "./hooks/useFetch";
 
-// NOTA: en este commit inicial solo se arma la estructura y el layout base.
-// La carga desde la API, la busqueda, favoritos y bloqueados se conectan
-// en los siguientes commits (ver README / historial de Git).
+const API_URL = "https://rickandmortyapi.com/api/character";
+
 function App() {
+  // useFetch es nuestro hook propio: nos entrega los datos, si esta
+  // cargando y si hubo error, todo en un solo lugar.
+  const { data, loading, error } = useFetch(API_URL);
+
+  // Por ahora favoritos y bloqueados son arreglos vacios; se conectan
+  // de verdad en los proximos commits.
+  const [favoritos] = useState([]);
+
+  const personajes = data?.results ?? [];
+
   return (
     <div className="min-h-screen">
       <Header />
 
       <main className="space-y-6 py-6">
-        <StatsBar total={0} favoritos={0} bloqueados={0} />
+        <StatsBar
+          total={personajes.length}
+          favoritos={favoritos.length}
+          bloqueados={0}
+        />
 
-        <p className="px-6 text-center text-muted md:px-10">
-          🚧 Estructura inicial del proyecto. La conexión con la API llega en
-          el próximo commit.
-        </p>
+        {loading && <Loader />}
+
+        {error && <ErrorMessage mensaje={error} />}
+
+        {!loading && !error && (
+          <CharacterList
+            personajes={personajes}
+            favoritos={favoritos}
+            onToggleFavorito={() => {}}
+            onBloquear={() => {}}
+          />
+        )}
       </main>
 
       <Footer />
