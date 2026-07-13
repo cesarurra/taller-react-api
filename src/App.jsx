@@ -5,6 +5,7 @@ import StatsBar from "./components/StatsBar";
 import SearchBar from "./components/SearchBar";
 import CharacterList from "./components/CharacterList";
 import FavoritesPanel from "./components/FavoritesPanel";
+import BlockedPanel from "./components/BlockedPanel";
 import Loader from "./components/Loader";
 import ErrorMessage from "./components/ErrorMessage";
 import useFetch from "./hooks/useFetch";
@@ -15,17 +16,18 @@ function App() {
   const { data, loading, error } = useFetch(API_URL);
 
   const [favoritos, setFavoritos] = useState([]);
+  const [bloqueados, setBloqueados] = useState([]);
   const [busqueda, setBusqueda] = useState("");
 
   const personajes = data?.results ?? [];
 
+  // Un personaje bloqueado no debe aparecer en los resultados de busqueda.
   const personajesFiltrados = useMemo(() => {
-    return personajes.filter((p) =>
-      p.name.toLowerCase().includes(busqueda.toLowerCase())
-    );
-  }, [personajes, busqueda]);
+    return personajes
+      .filter((p) => !bloqueados.some((b) => b.id === p.id))
+      .filter((p) => p.name.toLowerCase().includes(busqueda.toLowerCase()));
+  }, [personajes, busqueda, bloqueados]);
 
-  // Agrega o quita un personaje de favoritos segun si ya estaba o no.
   function alternarFavorito(personaje) {
     setFavoritos((actuales) => {
       const yaEsta = actuales.some((f) => f.id === personaje.id);
@@ -40,6 +42,21 @@ function App() {
     setFavoritos((actuales) => actuales.filter((f) => f.id !== personaje.id));
   }
 
+  function bloquearPersonaje(personaje) {
+    setBloqueados((actuales) => {
+      const yaEsta = actuales.some((b) => b.id === personaje.id);
+      if (yaEsta) return actuales;
+      return [...actuales, personaje];
+    });
+    // Si el personaje estaba en favoritos, se retira automaticamente
+    // (requisito del enunciado).
+    setFavoritos((actuales) => actuales.filter((f) => f.id !== personaje.id));
+  }
+
+  function desbloquearPersonaje(personaje) {
+    setBloqueados((actuales) => actuales.filter((b) => b.id !== personaje.id));
+  }
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -48,7 +65,7 @@ function App() {
         <StatsBar
           total={personajes.length}
           favoritos={favoritos.length}
-          bloqueados={0}
+          bloqueados={bloqueados.length}
         />
 
         <SearchBar value={busqueda} onChange={setBusqueda} />
@@ -63,10 +80,16 @@ function App() {
               personajes={personajesFiltrados}
               favoritos={favoritos}
               onToggleFavorito={alternarFavorito}
-              onBloquear={() => {}}
+              onBloquear={bloquearPersonaje}
             />
 
-            <FavoritesPanel favoritos={favoritos} onQuitar={quitarFavorito} />
+            <div className="space-y-4">
+              <FavoritesPanel favoritos={favoritos} onQuitar={quitarFavorito} />
+              <BlockedPanel
+                bloqueados={bloqueados}
+                onDesbloquear={desbloquearPersonaje}
+              />
+            </div>
           </div>
         )}
       </main>
